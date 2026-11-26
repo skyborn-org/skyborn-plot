@@ -30,4 +30,4 @@ jobs:
           pip install --no-build-isolation -e ".[dev]"
 
       - name: Run pytest
-        run: pytest -o addopts= -p no:cacheprovider -q
+        run: python -B -m pytest -o addopts= -p no:cacheprovider -q
