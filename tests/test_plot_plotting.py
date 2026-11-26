@@ -1,0 +1,667 @@
+"""
+Tests for skybornplot.plotting module.
+
+This module tests the plotting functionality in skybornplot.plotting,
+including matplotlib integration and image comparison tests.
+"""
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pytest
+from matplotlib.image import AxesImage
+from matplotlib.patches import PathPatch
+
+from skybornplot import plotting as plotting_module
+from skybornplot.plotting import (
+    add_centered_axes,
+    add_equal_axes,
+    createFigure,
+    gradient_fill_between,
+)
+
+
+class TestCreateFigure:
+    """Test the createFigure function."""
+
+    def test_createFigure_basic(self):
+        """Test basic createFigure functionality."""
+        fig = createFigure()
+
+        # Check default parameters
+        assert fig.get_figwidth() == 12
+        assert fig.get_figheight() == 8
+        assert fig.dpi == 300
+
+        plt.close(fig)
+
+    def test_createFigure_custom_figsize(self):
+        """Test createFigure with custom figsize."""
+        fig = createFigure(figsize=(8, 6))
+
+        assert fig.get_figwidth() == 8
+        assert fig.get_figheight() == 6
+        assert fig.dpi == 300
+
+        plt.close(fig)
+
+    def test_createFigure_custom_dpi(self):
+        """Test createFigure with custom DPI."""
+        fig = createFigure(dpi=150)
+
+        assert fig.get_figwidth() == 12
+        assert fig.get_figheight() == 8
+        assert fig.dpi == 150
+
+        plt.close(fig)
+
+    def test_createFigure_with_subplotAdj(self):
+        """Test createFigure with subplot adjustments."""
+        subplot_params = {
+            "left": 0.1,
+            "right": 0.9,
+            "top": 0.9,
+            "bottom": 0.1,
+            "hspace": 0.2,
+            "wspace": 0.2,
+        }
+
+        fig = createFigure(subplotAdj=subplot_params)
+
+        # Check that figure was created successfully
+        assert fig.get_figwidth() == 12
+        assert fig.get_figheight() == 8
+
+        plt.close(fig)
+
+    def test_createFigure_kwargs(self):
+        """Test createFigure with additional keyword arguments."""
+        fig = createFigure(facecolor="lightblue", edgecolor="red")
+
+        # Check that figure was created successfully
+        assert fig.get_figwidth() == 12
+        assert fig.get_figheight() == 8
+
+        plt.close(fig)
+
+    def test_createFigure_all_parameters(self):
+        """Test createFigure with all parameters specified."""
+        subplot_params = {"left": 0.2, "right": 0.8}
+
+        fig = createFigure(
+            figsize=(10, 5),
+            dpi=200,
+            subplotAdj=subplot_params,
+            facecolor="white",
+            edgecolor="black",
+        )
+
+        assert fig.get_figwidth() == 10
+        assert fig.get_figheight() == 5
+        assert fig.dpi == 200
+
+        plt.close(fig)
+
+
+class TestAddEqualAxes:
+    """Test the add_equal_axes function."""
+
+    @pytest.mark.mpl_image_compare(remove_text=True, tolerance=20)
+    def test_add_equal_axes_right(self):
+        """Test adding axes to the right."""
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        # Create some sample data
+        x = np.linspace(0, 10, 100)
+        y = np.sin(x)
+        ax.plot(x, y, "b-", linewidth=2)
+        ax.set_xlabel("X axis")
+        ax.set_ylabel("Y axis")
+        ax.set_title("Main Plot")
+        ax.grid(True, alpha=0.3)
+
+        # Add new axes to the right
+        ax_new = add_equal_axes(ax, loc="right", pad=0.05, width=0.1)
+
+        # Add content to new axes
+        ax_new.plot(y, x, "r-", linewidth=2)
+        ax_new.set_xlabel("Y values")
+        ax_new.set_ylabel("X values")
+        ax_new.grid(True, alpha=0.3)
+
+        return fig
+
+    @pytest.mark.mpl_image_compare(remove_text=True, tolerance=20)
+    def test_add_equal_axes_left(self):
+        """Test adding axes to the left."""
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        # Create some sample data
+        x = np.linspace(0, 2 * np.pi, 100)
+        y = np.cos(x)
+        ax.plot(x, y, "g-", linewidth=2)
+        ax.set_xlabel("X axis")
+        ax.set_ylabel("Cosine values")
+        ax.set_title("Main Plot")
+        ax.grid(True, alpha=0.3)
+
+        # Add new axes to the left
+        ax_new = add_equal_axes(ax, loc="left", pad=0.05, width=0.15)
+
+        # Add histogram to new axes
+        ax_new.hist(y, bins=20, orientation="horizontal", alpha=0.7, color="orange")
+        ax_new.set_xlabel("Frequency")
+        ax_new.set_ylabel("Cosine values")
+
+        return fig
+
+    @pytest.mark.mpl_image_compare(remove_text=True, tolerance=20)
+    def test_add_equal_axes_top(self):
+        """Test adding axes to the top."""
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        # Create 2D data
+        x = np.linspace(-2, 2, 50)
+        y = np.linspace(-2, 2, 50)
+        X, Y = np.meshgrid(x, y)
+        Z = np.exp(-(X**2 + Y**2))
+
+        # Main contour plot
+        ax.contourf(X, Y, Z, levels=20, cmap="viridis")
+        ax.set_xlabel("X coordinate")
+        ax.set_ylabel("Y coordinate")
+        ax.set_title("2D Gaussian")
+
+        # Add colorbar-like axes at top
+        ax_new = add_equal_axes(ax, loc="top", pad=0.05, width=0.05)
+
+        # Show mean values along x-axis
+        mean_z = np.mean(Z, axis=0)
+        ax_new.plot(x, mean_z, "k-", linewidth=2)
+        ax_new.set_xlabel("X coordinate")
+        ax_new.set_ylabel("Mean Z")
+        ax_new.grid(True, alpha=0.3)
+
+        return fig
+
+    @pytest.mark.mpl_image_compare(remove_text=True, tolerance=20)
+    def test_add_equal_axes_bottom(self):
+        """Test adding axes to the bottom."""
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        # Create scatter plot
+        np.random.seed(42)
+        x = np.random.randn(200)
+        y = 2 * x + np.random.randn(200) * 0.5
+
+        ax.scatter(x, y, alpha=0.6, c="blue", s=30)
+        ax.set_xlabel("X values")
+        ax.set_ylabel("Y values")
+        ax.set_title("Scatter Plot with Correlation")
+        ax.grid(True, alpha=0.3)
+
+        # Add marginal histogram at bottom
+        ax_new = add_equal_axes(ax, loc="bottom", pad=0.05, width=0.1)
+
+        ax_new.hist(x, bins=30, alpha=0.7, color="red", edgecolor="black")
+        ax_new.set_xlabel("X values")
+        ax_new.set_ylabel("Frequency")
+        ax_new.grid(True, alpha=0.3)
+
+        return fig
+
+    @pytest.mark.mpl_image_compare(remove_text=True, tolerance=20)
+    def test_add_equal_axes_multiple(self):
+        """Test adding multiple axes around a central plot."""
+        fig, ax = plt.subplots(figsize=(10, 8))
+
+        # Central heatmap
+        np.random.seed(123)
+        data = np.random.randn(20, 20)
+        ax.imshow(data, cmap="RdBu_r", aspect="equal")
+        ax.set_title("Central Heatmap")
+        ax.set_xlabel("X index")
+        ax.set_ylabel("Y index")
+
+        # Add axes on all sides
+        ax_right = add_equal_axes(ax, loc="right", pad=0.02, width=0.08)
+        ax_top = add_equal_axes(ax, loc="top", pad=0.02, width=0.08)
+
+        # Right: row means
+        row_means = np.mean(data, axis=1)
+        ax_right.plot(row_means, np.arange(len(row_means)), "k-", linewidth=2)
+        ax_right.set_xlabel("Row mean")
+        ax_right.set_ylim(ax.get_ylim())
+        ax_right.grid(True, alpha=0.3)
+
+        # Top: column means
+        col_means = np.mean(data, axis=0)
+        ax_top.plot(np.arange(len(col_means)), col_means, "k-", linewidth=2)
+        ax_top.set_ylabel("Col mean")
+        ax_top.set_xlim(ax.get_xlim())
+        ax_top.grid(True, alpha=0.3)
+
+        return fig
+
+    def test_add_equal_axes_array_input(self):
+        """Test add_equal_axes with array of axes as input."""
+        fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+
+        # Plot on both axes
+        x = np.linspace(0, 10, 100)
+        axes[0].plot(x, np.sin(x))
+        axes[1].plot(x, np.cos(x))
+
+        # Add axes to the right of both subplots
+        ax_new = add_equal_axes(axes, loc="right", pad=0.05, width=0.1)
+
+        # Check that new axes was created
+        assert ax_new is not None
+        assert hasattr(ax_new, "plot")  # Should be a valid axes object
+
+        plt.close(fig)
+
+    def test_add_equal_axes_invalid_location(self):
+        """Test add_equal_axes with invalid location parameter."""
+        fig, ax = plt.subplots()
+
+        with pytest.raises(ValueError):
+            add_equal_axes(ax, loc="invalid_location", pad=0.05, width=0.1)
+
+        plt.close(fig)
+
+    def test_add_equal_axes_parameters(self):
+        """Test add_equal_axes parameter validation."""
+        fig, ax = plt.subplots()
+
+        # Test with various parameter values
+        ax_new1 = add_equal_axes(ax, loc="right", pad=0.1, width=0.2)
+        ax_new2 = add_equal_axes(ax, loc="left", pad=0.01, width=0.05)
+
+        # Check that axes were created successfully
+        assert ax_new1 is not None
+        assert ax_new2 is not None
+
+        plt.close(fig)
+
+
+class TestAddCenteredAxes:
+    """Test shared axes centered across two panels."""
+
+    def test_add_centered_axes_bottom_with_custom_length(self):
+        fig, axes = plt.subplots(1, 2, figsize=(8, 3))
+        axes[0].set_position([0.1, 0.2, 0.3, 0.6])
+        axes[1].set_position([0.55, 0.2, 0.3, 0.6])
+
+        cax = add_centered_axes(
+            axes[0], axes[1], loc="bottom", pad=0.04, width=0.03, length=0.5
+        )
+        position = cax.get_position()
+
+        assert position.x0 == pytest.approx(0.225)
+        assert position.x1 == pytest.approx(0.725)
+        assert position.y0 == pytest.approx(0.13)
+        assert position.y1 == pytest.approx(0.16)
+        plt.close(fig)
+
+    def test_add_centered_axes_top_and_right_use_full_span(self):
+        fig, axes = plt.subplots(1, 2, figsize=(8, 3))
+        axes[0].set_position([0.1, 0.2, 0.3, 0.4])
+        axes[1].set_position([0.55, 0.3, 0.3, 0.2])
+
+        top = add_centered_axes(axes[0], axes[1], loc="top")
+        right = add_centered_axes(axes[0], axes[1], loc="right")
+
+        top_position = top.get_position()
+        right_position = right.get_position()
+        assert top_position.x0 == pytest.approx(0.1)
+        assert top_position.x1 == pytest.approx(0.85)
+        assert right_position.y0 == pytest.approx(0.2)
+        assert right_position.y1 == pytest.approx(0.6)
+        plt.close(fig)
+
+    def test_add_centered_axes_left(self):
+        fig, axes = plt.subplots(1, 2, figsize=(8, 3))
+        axes[0].set_position([0.2, 0.2, 0.25, 0.6])
+        axes[1].set_position([0.55, 0.3, 0.25, 0.4])
+
+        cax = add_centered_axes(
+            axes[0], axes[1], loc="left", pad=0.04, width=0.03, length=0.4
+        )
+        position = cax.get_position()
+
+        assert position.x0 == pytest.approx(0.13)
+        assert position.x1 == pytest.approx(0.16)
+        assert position.y0 == pytest.approx(0.3)
+        assert position.y1 == pytest.approx(0.7)
+        plt.close(fig)
+
+    def test_add_centered_axes_validates_inputs(self):
+        fig, ax = plt.subplots()
+        other_fig, other_ax = plt.subplots()
+
+        with pytest.raises(TypeError, match="Axes"):
+            add_centered_axes(ax, object())
+        with pytest.raises(ValueError, match="same figure"):
+            add_centered_axes(ax, other_ax)
+        with pytest.raises(ValueError, match="loc"):
+            add_centered_axes(ax, ax, loc="middle")
+        with pytest.raises(ValueError, match="pad"):
+            add_centered_axes(ax, ax, pad=-0.1)
+        with pytest.raises(ValueError, match="width"):
+            add_centered_axes(ax, ax, width=0)
+        with pytest.raises(ValueError, match="length"):
+            add_centered_axes(ax, ax, length=0)
+
+        plt.close(fig)
+        plt.close(other_fig)
+
+    def test_add_centered_axes_can_be_used_as_colorbar_cax(self):
+        fig, axes = plt.subplots(1, 2, figsize=(8, 3))
+        data = np.arange(9).reshape(3, 3)
+        image = axes[0].imshow(data)
+        axes[1].imshow(data)
+        cax = add_centered_axes(
+            axes[0], axes[1], loc="bottom", pad=0.05, width=0.04, length=0.5
+        )
+
+        colorbar = fig.colorbar(image, cax=cax, orientation="horizontal")
+
+        assert colorbar.ax is cax
+        plt.close(fig)
+
+
+class TestGradientFillBetween:
+    """Test smooth gradient filling between curves."""
+
+    def test_gradient_fill_between_object_x_falls_back_to_float(self):
+        fig, ax = plt.subplots(figsize=(4, 3))
+        x = np.array([0.0, 1.0, 2.0], dtype=object)
+
+        result = gradient_fill_between(
+            ax, x, [0.0, 1.0, 0.0], [2.0, 3.0, 2.0], resolution=8
+        )
+
+        assert result.images[0].get_extent()[:2] == [0.0, 2.0]
+        plt.close(fig)
+
+    def test_gradient_fill_between_edge_modes(self):
+        fig, ax = plt.subplots(figsize=(4, 3))
+        x = np.array([0.0, 1.0, 2.0])
+        y1 = np.array([0.0, 2.0, 0.0])
+        y2 = np.array([3.0, 1.0, 3.0])
+
+        y1_result = gradient_fill_between(ax, x, y1, y2, edge_mode="y1", resolution=8)
+        y2_result = gradient_fill_between(ax, x, y1, y2, edge_mode="y2", resolution=8)
+
+        assert y1_result.images[0].get_array().shape == (8, 8)
+        assert y2_result.images[0].get_array().shape == (8, 8)
+        plt.close(fig)
+
+    def test_gradient_fill_between_basic(self):
+        fig, ax = plt.subplots(figsize=(4, 3), dpi=100)
+        x = np.linspace(0, 10, 20)
+        y1 = 1 + 0.2 * np.sin(x)
+        y2 = 4 + 0.3 * np.cos(x)
+
+        result = gradient_fill_between(
+            ax,
+            x,
+            y1,
+            y2,
+            cmap="YlOrBr",
+            resolution=(32, 24),
+            zorder=2,
+        )
+
+        assert len(result.images) == 1
+        assert len(result.clip_paths) == 1
+        assert isinstance(result.images[0], AxesImage)
+        assert isinstance(result.clip_paths[0], PathPatch)
+        assert result.images[0].get_zorder() == 2
+        assert result.images[0].get_array().shape == (24, 32)
+
+        plt.close(fig)
+
+    def test_gradient_fill_between_is_relative_to_curves(self):
+        fig, ax = plt.subplots(figsize=(4, 3), dpi=100)
+        x = np.array([0.0, 1.0, 2.0])
+        y1 = np.array([0.0, 10.0, 20.0])
+        y2 = y1 + 10.0
+
+        result = gradient_fill_between(
+            ax,
+            x,
+            y1,
+            y2,
+            resolution=(3, 31),
+            interpolation="nearest",
+        )
+        values = np.asarray(result.images[0].get_array())
+
+        assert values[5, 0] == pytest.approx(0.5)
+        assert values[15, 1] == pytest.approx(0.5)
+        assert values[25, 2] == pytest.approx(0.5)
+
+        plt.close(fig)
+
+    def test_gradient_fill_between_datetime_x(self):
+        fig, ax = plt.subplots(figsize=(4, 3), dpi=100)
+        x = np.array(["2000-01-01", "2001-01-01", "2002-01-01"], dtype="datetime64[D]")
+        y1 = np.array([0.0, 1.0, 0.0])
+        y2 = np.array([2.0, 3.0, 2.0])
+
+        result = gradient_fill_between(ax, x, y1, y2, resolution=16)
+
+        xmin, xmax, ymin, ymax = result.images[0].get_extent()
+        assert xmax > xmin
+        assert ymin == pytest.approx(0.0)
+        assert ymax == pytest.approx(3.0)
+
+        plt.close(fig)
+
+    def test_gradient_fill_between_splits_nan_runs(self):
+        fig, ax = plt.subplots(figsize=(4, 3), dpi=100)
+        x = np.arange(6.0)
+        y1 = np.array([0.0, 0.2, np.nan, 0.5, 0.6, 0.8])
+        y2 = y1 + 2.0
+
+        result = gradient_fill_between(ax, x, y1, y2, resolution=12)
+
+        assert len(result.images) == 2
+        assert len(result.clip_paths) == 2
+
+        plt.close(fig)
+
+    def test_gradient_fill_between_auto_resolution(self):
+        fig, ax = plt.subplots(figsize=(2, 1.5), dpi=80)
+        x = np.linspace(0, 1, 5)
+        result = gradient_fill_between(ax, x, x, x + 1)
+
+        ny, nx = result.images[0].get_array().shape
+        assert nx >= 128
+        assert ny >= 128
+
+        plt.close(fig)
+
+    def test_gradient_fill_between_remove(self):
+        fig, ax = plt.subplots(figsize=(4, 3), dpi=100)
+        x = np.linspace(0, 1, 5)
+        result = gradient_fill_between(ax, x, x, x + 1, resolution=8)
+
+        result.remove()
+
+        assert result.images[0] not in ax.images
+        assert result.clip_paths[0] not in ax.patches
+
+        plt.close(fig)
+
+    def test_gradient_fill_between_remove_ignores_already_removed_artists(self):
+        fig, ax = plt.subplots(figsize=(4, 3))
+        result = gradient_fill_between(
+            ax, np.linspace(0, 1, 5), np.linspace(0, 1, 5), np.linspace(1, 2, 5)
+        )
+
+        class AlreadyRemoved:
+            def remove(self):
+                raise ValueError("artist is already removed")
+
+        result.images = [AlreadyRemoved()]
+        result.clip_paths = []
+        result.remove()
+        plt.close(fig)
+
+    def test_gradient_fill_between_validation(self):
+        fig, ax = plt.subplots()
+
+        with pytest.raises(TypeError, match="Axes"):
+            gradient_fill_between(object(), [0, 1], [0, 1])
+        with pytest.raises(ValueError, match="x and y1"):
+            gradient_fill_between(ax, [0, 1], [0, 1, 2])
+        with pytest.raises(ValueError, match="edge_mode"):
+            gradient_fill_between(ax, [0, 1], [0, 1], [1, 2], edge_mode="bad")
+        with pytest.raises(ValueError, match="at least two finite"):
+            gradient_fill_between(ax, [0, 1], [np.nan, 1], [1, 2])
+        with pytest.raises(ValueError, match="resolution"):
+            gradient_fill_between(ax, [0, 1], [0, 1], [1, 2], resolution=1)
+        with pytest.raises(ValueError, match="resolution"):
+            gradient_fill_between(ax, [0, 1], [0, 1], [1, 2], resolution=(1,))
+        with pytest.raises(ValueError, match="at least 2"):
+            gradient_fill_between(ax, [0, 1], [0, 1], [1, 2], resolution=(1, 2))
+        with pytest.raises(ValueError, match="non-zero"):
+            gradient_fill_between(ax, [1, 1], [0, 1], [1, 2], resolution=8)
+        plt.close(fig)
+
+    def test_gradient_fill_between_empty_valid_runs(self):
+        valid = np.array([False, False])
+        assert list(plotting_module._iter_valid_runs(valid)) == []
+
+    def test_gradient_fill_between_defensive_y2_shape_check(self, monkeypatch):
+        fig, ax = plt.subplots()
+
+        def wrong_shape_broadcast(array, shape):
+            return np.array([0.0])
+
+        monkeypatch.setattr(plotting_module.np, "broadcast_to", wrong_shape_broadcast)
+        with pytest.raises(ValueError, match="y2 must be scalar"):
+            gradient_fill_between(ax, [0, 1], [0, 1], [1, 2])
+
+        plt.close(fig)
+
+
+class TestPlottingIntegration:
+    """Integration tests for plotting module."""
+
+    @pytest.mark.mpl_image_compare(remove_text=True, tolerance=20)
+    def test_plotting_with_climate_data(self, sample_2d_field):
+        """Test plotting functions with realistic climate data."""
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        # Create a temperature map
+        temp = sample_2d_field
+        lat = temp.lat
+        lon = temp.lon
+
+        # Plot temperature field
+        im = ax.contourf(lon, lat, temp, levels=20, cmap="RdYlBu_r")
+        ax.set_xlabel("Longitude")
+        ax.set_ylabel("Latitude")
+        ax.set_title("Surface Temperature")
+
+        # Add colorbar using add_equal_axes
+        cax = add_equal_axes(ax, loc="right", pad=0.02, width=0.03)
+        fig.colorbar(im, cax=cax, label="Temperature (K)")
+
+        # Add marginal plots
+        ax_top = add_equal_axes(ax, loc="top", pad=0.02, width=0.08)
+        ax_right = add_equal_axes(
+            ax, loc="right", pad=0.15, width=0.08
+        )  # Further right
+
+        # Zonal mean (average over longitude)
+        zonal_mean = temp.mean(dim="lon")
+        ax_right.plot(zonal_mean, lat, "k-", linewidth=2)
+        ax_right.set_xlabel("Zonal mean (K)")
+        ax_right.set_ylim(ax.get_ylim())
+        ax_right.grid(True, alpha=0.3)
+
+        # Meridional mean (average over latitude)
+        meridional_mean = temp.mean(dim="lat")
+        ax_top.plot(lon, meridional_mean, "k-", linewidth=2)
+        ax_top.set_ylabel("Meridional mean (K)")
+        ax_top.set_xlim(ax.get_xlim())
+        ax_top.grid(True, alpha=0.3)
+
+        return fig
+
+    def test_plotting_error_handling(self):
+        """Test error handling in plotting functions."""
+        fig, ax = plt.subplots()
+
+        # Test with invalid parameters
+        with pytest.raises(ValueError):
+            add_equal_axes(ax, loc="nowhere", pad=0.05, width=0.1)
+
+        plt.close(fig)
+
+    @pytest.mark.mpl_image_compare(remove_text=True, tolerance=20)
+    def test_complex_layout(self, sample_climate_data):
+        """Test complex multi-panel layout using add_equal_axes."""
+        temp = sample_climate_data["temperature"]
+        precip = sample_climate_data["precipitation"]
+
+        fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+        fig.suptitle("Climate Data Analysis")
+
+        # Temperature maps for different months
+        temp_jan = temp.isel(time=0)  # January
+        temp_jul = temp.isel(time=6)  # July
+
+        im1 = axes[0, 0].contourf(
+            temp.lon, temp.lat, temp_jan, levels=20, cmap="RdYlBu_r"
+        )
+        axes[0, 0].set_title("Temperature - January")
+        axes[0, 0].set_xlabel("Longitude")
+        axes[0, 0].set_ylabel("Latitude")
+
+        im2 = axes[0, 1].contourf(
+            temp.lon, temp.lat, temp_jul, levels=20, cmap="RdYlBu_r"
+        )
+        axes[0, 1].set_title("Temperature - July")
+        axes[0, 1].set_xlabel("Longitude")
+
+        # Precipitation maps
+        precip_jan = precip.isel(time=0)
+        precip_jul = precip.isel(time=6)
+
+        im3 = axes[1, 0].contourf(
+            precip.lon, precip.lat, precip_jan, levels=20, cmap="Blues"
+        )
+        axes[1, 0].set_title("Precipitation - January")
+        axes[1, 0].set_xlabel("Longitude")
+        axes[1, 0].set_ylabel("Latitude")
+
+        im4 = axes[1, 1].contourf(
+            precip.lon, precip.lat, precip_jul, levels=20, cmap="Blues"
+        )
+        axes[1, 1].set_title("Precipitation - July")
+        axes[1, 1].set_xlabel("Longitude")
+
+        # Add colorbars using add_equal_axes
+        for i, (ax, im, label) in enumerate(
+            [
+                (axes[0, 0], im1, "Temperature (K)"),
+                (axes[0, 1], im2, "Temperature (K)"),
+                (axes[1, 0], im3, "Precipitation (mm/day)"),
+                (axes[1, 1], im4, "Precipitation (mm/day)"),
+            ]
+        ):
+            cax = add_equal_axes(ax, loc="right", pad=0.02, width=0.02)
+            fig.colorbar(im, cax=cax, label=label if i % 2 == 0 else "")
+
+        plt.tight_layout()
+        return fig
+
+
+if __name__ == "__main__":
+    # Quick test runner
+    pytest.main([__file__, "-v"])

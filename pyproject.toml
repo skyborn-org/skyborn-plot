@@ -1,0 +1,110 @@
+[build-system]
+requires = [
+    "setuptools>=61.0",
+    "wheel",
+    "numpy>=1.24.0",
+    "meson",
+    "ninja",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "skyborn-plot"
+dynamic = ["version"]
+description = "NCL-style atmospheric and climate vector, contour, and scatter plotting with compiled C kernels"
+readme = "README.md"
+authors = [{ name = "Qianye Su", email = "suqianye2000@gmail.com" }]
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+keywords = [
+    "atmospheric-science",
+    "meteorology",
+    "climate",
+    "visualization",
+    "matplotlib",
+    "curly-vector",
+    "ncl",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+    "Topic :: Scientific/Engineering :: Visualization",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+]
+dependencies = [
+    "numpy>=1.24.0",
+    "matplotlib>=3.6.0",
+]
+
+[project.optional-dependencies]
+geo = [
+    "cartopy",
+    "xarray",
+    "scipy",
+]
+dev = [
+    "pytest>=7.0",
+    "xarray",
+    "scipy",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/skyborn-org/skyborn-plot"
+"Repository" = "https://github.com/skyborn-org/skyborn-plot"
+"Documentation" = "https://skyborn.readthedocs.io/"
+"Bug Tracker" = "https://github.com/skyborn-org/skyborn-plot/issues"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = false
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = [
+    "*.build*",
+    "*.build*.*",
+    "*.build",
+    "*.build.*",
+]
+
+[tool.setuptools.exclude-package-data]
+"*" = [
+    "*.pyc",
+    "*.pyo",
+    "__pycache__/*",
+    "build/*",
+    "build_local/*",
+    "meson-private/*",
+    "meson-logs/*",
+    "meson-info/*",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "skybornplot.__version__" }
+
+[tool.black]
+line-length = 88
+target-version = ["py39", "py310", "py311", "py312", "py313", "py314"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+src_paths = ["src", "tests"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
