@@ -7,7 +7,11 @@ from collections.abc import Hashable
 from typing import Any
 
 import numpy as np
-import xarray as xr
+
+try:
+    import xarray as xr
+except ImportError:  # pragma: no cover
+    xr = None  # type: ignore[assignment]
 
 from .._shared.coords import _filled_scalar_field_array
 
@@ -37,7 +41,7 @@ def _apply_dataset_isel(da: xr.DataArray, isel):
 
 
 def _get_plot_dataarray(ds: xr.Dataset, value, *, isel=None, role: str) -> xr.DataArray:
-    if isinstance(value, xr.DataArray):
+    if xr is not None and isinstance(value, xr.DataArray):
         da = value
     else:
         da = ds[value]
@@ -166,7 +170,7 @@ def _prepare_dataset_style_field(
     if value is None or isinstance(value, str) or np.isscalar(value):
         return value
 
-    if isinstance(value, xr.DataArray):
+    if xr is not None and isinstance(value, xr.DataArray):
         da = _apply_dataset_isel(value, isel).squeeze(drop=True)
         if da.ndim == 2:
             da = _transpose_2d_dataarray_to_dims(da, vector_dims, role=role)

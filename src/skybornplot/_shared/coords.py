@@ -5,7 +5,11 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
-import xarray as xr
+
+try:
+    import xarray as xr
+except ImportError:  # pragma: no cover
+    xr = None  # type: ignore[assignment]
 
 from .types import CoordinateShape, TargetDims
 
@@ -32,7 +36,7 @@ def _subset_ready_array(value: Any) -> np.ndarray:
 
 def _maybe_squeezed_dataarray(value: Any) -> xr.DataArray | None:
     """Return a squeezed DataArray or ``None`` for non-xarray inputs."""
-    if not isinstance(value, xr.DataArray):
+    if xr is None or not isinstance(value, xr.DataArray):
         return None
     return value.squeeze(drop=True)
 
@@ -50,7 +54,7 @@ def _transpose_dataarray_if_possible(value: Any, target_dims: TargetDims) -> Any
 def _normalized_field_array(value: Any, target_dims: TargetDims = None) -> np.ndarray:
     """Return one style or mask field as an ndarray in plotting dimension order."""
     value = _transpose_dataarray_if_possible(value, target_dims)
-    if isinstance(value, xr.DataArray):
+    if xr is not None and isinstance(value, xr.DataArray):
         value = value.data
     return _subset_ready_array(value)
 

@@ -13,7 +13,11 @@ from typing import TYPE_CHECKING, Any
 
 import matplotlib.pyplot as plt
 import numpy as np
-import xarray as xr
+
+try:
+    import xarray as xr
+except ImportError:  # pragma: no cover
+    xr = None  # type: ignore[assignment]
 
 from ._adapters import cartopy_vector as _cartopy_adapter
 from ._adapters import curly_vector_entry as _entry_adapter
@@ -1239,7 +1243,7 @@ def curly_vector(*args: Any, **kwargs: Any) -> CurlyVectorPlotSet:
     if _looks_like_axes(first):
         return _curly_vector_from_arrays(*args, **kwargs)
 
-    if isinstance(first, xr.Dataset):
+    if xr is not None and isinstance(first, xr.Dataset):
         return _curly_vector_from_dataset(*args, **kwargs)
 
     if len(args) >= 4:
